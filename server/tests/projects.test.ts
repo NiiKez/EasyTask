@@ -124,6 +124,7 @@ describe("Projects API", () => {
 
   describe("GET /projects/:id", () => {
     it("returns 404 when project is not visible to current user", async () => {
+      // middleware: getProjectMembership → no rows
       mockQuery.mockResolvedValueOnce([[]]);
 
       const res = await request(app).get("/projects/99").set(authHeader(5));
@@ -135,20 +136,8 @@ describe("Projects API", () => {
 
   describe("PATCH /projects/:id", () => {
     it("requires admin role", async () => {
-      mockQuery.mockResolvedValueOnce([
-        [
-          {
-            id: 10,
-            name: "Platform",
-            description: null,
-            created_by: 7,
-            created_at: now,
-            updated_at: now,
-            role: "MEMBER",
-            is_owner: 0,
-          },
-        ],
-      ]);
+      // middleware: getProjectMembership → MEMBER
+      mockQuery.mockResolvedValueOnce([[{ role: "MEMBER" }]]);
 
       const res = await request(app)
         .patch("/projects/10")
@@ -161,6 +150,9 @@ describe("Projects API", () => {
 
     it("updates project fields for admins", async () => {
       mockQuery
+        // middleware: getProjectMembership → ADMIN
+        .mockResolvedValueOnce([[{ role: "ADMIN" }]])
+        // controller: getProjectForUser (data fetch)
         .mockResolvedValueOnce([
           [
             {
@@ -175,7 +167,9 @@ describe("Projects API", () => {
             },
           ],
         ])
+        // controller: updateProject
         .mockResolvedValueOnce([{ affectedRows: 1 }])
+        // controller: getProjectForUser (refresh)
         .mockResolvedValueOnce([
           [
             {
@@ -207,6 +201,7 @@ describe("Projects API", () => {
 
   describe("DELETE /projects/:id", () => {
     it("requires admin role", async () => {
+      // middleware: getProjectMembership → VIEWER
       mockQuery.mockResolvedValueOnce([[{ role: "VIEWER" }]]);
 
       const res = await request(app).delete("/projects/10").set(authHeader(9));
@@ -217,7 +212,9 @@ describe("Projects API", () => {
 
     it("deletes project for admins", async () => {
       mockQuery
+        // middleware: getProjectMembership → ADMIN
         .mockResolvedValueOnce([[{ role: "ADMIN" }]])
+        // controller: deleteProject
         .mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const res = await request(app).delete("/projects/10").set(authHeader(7));
@@ -229,7 +226,9 @@ describe("Projects API", () => {
   describe("GET /projects/:id/members", () => {
     it("returns member list when caller belongs to project", async () => {
       mockQuery
+        // middleware: getProjectMembership → MEMBER
         .mockResolvedValueOnce([[{ role: "MEMBER" }]])
+        // controller: listProjectMembers
         .mockResolvedValueOnce([
           [
             {
@@ -273,6 +272,7 @@ describe("Projects API", () => {
 
   describe("PATCH /projects/:id/members/:userId", () => {
     it("requires admin role", async () => {
+      // middleware: getProjectMembership → MEMBER
       mockQuery.mockResolvedValueOnce([[{ role: "MEMBER" }]]);
 
       const res = await request(app)
@@ -286,7 +286,9 @@ describe("Projects API", () => {
 
     it("blocks owner role changes", async () => {
       mockQuery
+        // middleware: getProjectMembership → ADMIN
         .mockResolvedValueOnce([[{ role: "ADMIN" }]])
+        // controller: getProjectOwnerId
         .mockResolvedValueOnce([[{ created_by: 7 }]]);
 
       const res = await request(app)
@@ -300,9 +302,13 @@ describe("Projects API", () => {
 
     it("updates target member role", async () => {
       mockQuery
+        // middleware: getProjectMembership → ADMIN
         .mockResolvedValueOnce([[{ role: "ADMIN" }]])
+        // controller: getProjectOwnerId
         .mockResolvedValueOnce([[{ created_by: 7 }]])
+        // controller: updateProjectMemberRole
         .mockResolvedValueOnce([{ affectedRows: 1 }])
+        // controller: listProjectMembers
         .mockResolvedValueOnce([
           [
             {
