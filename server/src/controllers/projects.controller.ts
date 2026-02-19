@@ -3,9 +3,7 @@ import {
   createProjectForUser,
   deleteProject,
   getProjectForUser,
-  getProjectMembership,
   getProjectOwnerId,
-  hasAtLeastRole,
   isValidProjectRole,
   listProjectMembers,
   listProjectsForUser,
@@ -15,11 +13,7 @@ import {
 
 export async function getProjects(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req, res);
-    if (userId === null) {
-      return;
-    }
-
+    const userId = req.user!.userId;
     const projects = await listProjectsForUser(userId);
     res.status(200).json({ projects });
   } catch (err) {
@@ -29,10 +23,7 @@ export async function getProjects(req: Request, res: Response, next: NextFunctio
 
 export async function createProject(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req, res);
-    if (userId === null) {
-      return;
-    }
+    const userId = req.user!.userId;
 
     const payload = parseCreateProjectPayload(req.body);
     if (!payload.ok) {
@@ -60,16 +51,8 @@ export async function createProject(req: Request, res: Response, next: NextFunct
 
 export async function getProjectById(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req, res);
-    if (userId === null) {
-      return;
-    }
-
-    const projectId = parsePositiveInt(req.params.id);
-    if (projectId === null) {
-      res.status(400).json({ error: "Invalid project id" });
-      return;
-    }
+    const { projectId } = req.membership!;
+    const userId = req.user!.userId;
 
     const project = await getProjectForUser(projectId, userId);
     if (!project) {
@@ -85,25 +68,12 @@ export async function getProjectById(req: Request, res: Response, next: NextFunc
 
 export async function patchProjectById(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req, res);
-    if (userId === null) {
-      return;
-    }
-
-    const projectId = parsePositiveInt(req.params.id);
-    if (projectId === null) {
-      res.status(400).json({ error: "Invalid project id" });
-      return;
-    }
+    const { projectId } = req.membership!;
+    const userId = req.user!.userId;
 
     const project = await getProjectForUser(projectId, userId);
     if (!project) {
       res.status(404).json({ error: "Project not found" });
-      return;
-    }
-
-    if (!hasAtLeastRole(project.role, "ADMIN")) {
-      res.status(403).json({ error: "Admin role required" });
       return;
     }
 
@@ -133,27 +103,7 @@ export async function patchProjectById(req: Request, res: Response, next: NextFu
 
 export async function deleteProjectById(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req, res);
-    if (userId === null) {
-      return;
-    }
-
-    const projectId = parsePositiveInt(req.params.id);
-    if (projectId === null) {
-      res.status(400).json({ error: "Invalid project id" });
-      return;
-    }
-
-    const membership = await getProjectMembership(projectId, userId);
-    if (!membership) {
-      res.status(404).json({ error: "Project not found" });
-      return;
-    }
-
-    if (!hasAtLeastRole(membership, "ADMIN")) {
-      res.status(403).json({ error: "Admin role required" });
-      return;
-    }
+    const { projectId } = req.membership!;
 
     const deleted = await deleteProject(projectId);
     if (!deleted) {
@@ -169,22 +119,7 @@ export async function deleteProjectById(req: Request, res: Response, next: NextF
 
 export async function getProjectMembersById(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = requireUserId(req, res);
-    if (userId === null) {
-      return;
-    }
-
-    const projectId = parsePositiveInt(req.params.id);
-    if (projectId === null) {
-      res.status(400).json({ error: "Invalid project id" });
-      return;
-    }
-
-    const membership = await getProjectMembership(projectId, userId);
-    if (!membership) {
-      res.status(404).json({ error: "Project not found" });
-      return;
-    }
+    const { projectId } = req.membership!;
 
     const members = await listProjectMembers(projectId);
     res.status(200).json({ members });
@@ -199,31 +134,11 @@ export async function patchProjectMemberRole(
   next: NextFunction,
 ) {
   try {
-    const actorUserId = requireUserId(req, res);
-    if (actorUserId === null) {
-      return;
-    }
-
-    const projectId = parsePositiveInt(req.params.id);
-    if (projectId === null) {
-      res.status(400).json({ error: "Invalid project id" });
-      return;
-    }
+    const { projectId } = req.membership!;
 
     const targetUserId = parsePositiveInt(req.params.userId);
     if (targetUserId === null) {
       res.status(400).json({ error: "Invalid user id" });
-      return;
-    }
-
-    const membership = await getProjectMembership(projectId, actorUserId);
-    if (!membership) {
-      res.status(404).json({ error: "Project not found" });
-      return;
-    }
-
-    if (!hasAtLeastRole(membership, "ADMIN")) {
-      res.status(403).json({ error: "Admin role required" });
       return;
     }
 
@@ -262,15 +177,6 @@ export async function patchProjectMemberRole(
   } catch (err) {
     next(err);
   }
-}
-
-function requireUserId(req: Request, res: Response): number | null {
-  const userId = req.user?.userId;
-  if (!userId) {
-    res.status(401).json({ error: "Authentication required" });
-    return null;
-  }
-  return userId;
 }
 
 function parsePositiveInt(value: string | string[] | undefined): number | null {
