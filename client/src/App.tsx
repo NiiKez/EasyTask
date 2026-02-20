@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute.js";
 import LoginPage from "./pages/LoginPage.js";
 import SignupPage from "./pages/SignupPage.js";
 import DashboardPage from "./pages/DashboardPage.js";
+import BoardPage from "./pages/BoardPage.js";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/projects/:projectId" element={<BoardPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
