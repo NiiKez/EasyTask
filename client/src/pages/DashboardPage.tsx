@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext.js";
 import { api } from "../lib/api.js";
-import type { ProjectSummary } from "../lib/types.js";
+import type { ProjectSummary, InvitationDetail } from "../lib/types.js";
 
 interface ProjectFormData {
   name: string;
@@ -25,6 +25,28 @@ export default function DashboardPage() {
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: () => api<{ projects: ProjectSummary[] }>("/projects"),
+  });
+
+  const invitationsQuery = useQuery({
+    queryKey: ["invitations"],
+    queryFn: () => api<{ invitations: InvitationDetail[] }>("/invites"),
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: (id: number) =>
+      api(`/invites/${id}/accept`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
+  const declineMutation = useMutation({
+    mutationFn: (id: number) =>
+      api(`/invites/${id}/decline`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+    },
   });
 
   const createMutation = useMutation({
@@ -66,6 +88,7 @@ export default function DashboardPage() {
   };
 
   const projects = projectsQuery.data?.projects ?? [];
+  const invitations = invitationsQuery.data?.invitations ?? [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -87,6 +110,47 @@ export default function DashboardPage() {
 
       {/* Main content */}
       <main className="mx-auto max-w-6xl px-4 py-8">
+        {/* Pending invitations */}
+        {invitations.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-3 text-lg font-semibold text-gray-900">
+              Pending Invitations
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {invitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                >
+                  <p className="font-medium text-gray-900">
+                    {inv.projectName}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Invited by {inv.inviterName} as{" "}
+                    <span className="font-medium">{inv.role}</span>
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => acceptMutation.mutate(inv.id)}
+                      disabled={acceptMutation.isPending}
+                      className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => declineMutation.mutate(inv.id)}
+                      disabled={declineMutation.isPending}
+                      className="rounded bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Loading state */}
         {projectsQuery.isLoading && (
           <div className="flex justify-center py-20">

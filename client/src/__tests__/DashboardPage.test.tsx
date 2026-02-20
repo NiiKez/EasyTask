@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import DashboardPage from "../pages/DashboardPage.js";
-import type { ProjectSummary } from "../lib/types.js";
+import type { ProjectSummary, InvitationDetail } from "../lib/types.js";
 
 /* ─── Mocks ─── */
 
@@ -71,6 +71,30 @@ const sampleProjects: ProjectSummary[] = [
     updatedAt: "2025-01-02T00:00:00Z",
   },
 ];
+
+const sampleInvitations: InvitationDetail[] = [
+  {
+    id: 10,
+    projectId: 5,
+    projectName: "Gamma",
+    inviterId: 3,
+    inviterName: "Alice",
+    role: "MEMBER",
+    status: "PENDING",
+    createdAt: "2025-01-05T00:00:00Z",
+  },
+];
+
+function mockApiForDashboard(
+  projects: ProjectSummary[] = sampleProjects,
+  invitations: InvitationDetail[] = [],
+) {
+  mockApiFn.mockImplementation((path: string) => {
+    if (path === "/projects") return Promise.resolve({ projects });
+    if (path === "/invites") return Promise.resolve({ invitations });
+    return Promise.resolve(undefined);
+  });
+}
 
 /* ─── Tests ─── */
 
@@ -236,5 +260,58 @@ describe("DashboardPage", () => {
     mockApiFn.mockResolvedValue({ projects: [] });
     renderDashboard();
     expect(screen.getByText("Test User")).toBeInTheDocument();
+  });
+
+  it("shows pending invitations section", async () => {
+    mockApiForDashboard(sampleProjects, sampleInvitations);
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText("Pending Invitations")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Gamma")).toBeInTheDocument();
+    expect(screen.getByText(/Invited by Alice as/)).toBeInTheDocument();
+    expect(screen.getByText("Accept")).toBeInTheDocument();
+    expect(screen.getByText("Decline")).toBeInTheDocument();
+  });
+
+  it("does not show invitations section when empty", async () => {
+    mockApiForDashboard(sampleProjects, []);
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText("Alpha")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Pending Invitations")).not.toBeInTheDocument();
+  });
+
+  it("accepts an invitation", async () => {
+    const user = userEvent.setup();
+    mockApiForDashboard(sampleProjects, sampleInvitations);
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText("Gamma")).toBeInTheDocument();
+    });
+
+    mockApiFn.mockResolvedValue({ invitation: { ...sampleInvitations[0], status: "ACCEPTED" } });
+    await user.click(screen.getByText("Accept"));
+
+    await waitFor(() => {
+      expect(mockApiFn).toHaveBeenCalledWith("/invites/10/accept", { method: "POST" });
+    });
+  });
+
+  it("declines an invitation", async () => {
+    const user = userEvent.setup();
+    mockApiForDashboard(sampleProjects, sampleInvitations);
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText("Gamma")).toBeInTheDocument();
+    });
+
+    mockApiFn.mockResolvedValue({ invitation: { ...sampleInvitations[0], status: "DECLINED" } });
+    await user.click(screen.getByText("Decline"));
+
+    await waitFor(() => {
+      expect(mockApiFn).toHaveBeenCalledWith("/invites/10/decline", { method: "POST" });
+    });
   });
 });

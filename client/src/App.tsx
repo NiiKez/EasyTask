@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage.js";
 import SignupPage from "./pages/SignupPage.js";
 import DashboardPage from "./pages/DashboardPage.js";
 import BoardPage from "./pages/BoardPage.js";
+import MembersPage from "./pages/MembersPage.js";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/projects/:projectId" element={<BoardPage />} />
+          <Route path="/projects/:projectId/members" element={<MembersPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

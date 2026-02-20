@@ -25,3 +25,22 @@ export interface TaskRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ProjectMember {
+  id: number;
+  email: string;
+  displayName: string;
+  role: Role;
+  isOwner: boolean;
+}
+
+export interface InvitationDetail {
+  id: number;
+  projectId: number;
+  projectName: string;
+  inviterId: number;
+  inviterName: string;
+  role: Role;
+  status: string;
+  createdAt: string;
+}
