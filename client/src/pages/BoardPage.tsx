@@ -324,7 +324,15 @@ export default function BoardPage() {
             &larr; Back
           </button>
           {project && (
-            <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+            <>
+              <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+              <button
+                onClick={() => navigate(`/projects/${projectId}/members`)}
+                className="rounded px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100"
+              >
+                Members
+              </button>
+            </>
           )}
         </div>
       </header>
