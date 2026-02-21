@@ -33,13 +33,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm space-y-6 rounded-lg bg-white p-8 shadow">
-        <h1 className="text-center text-2xl font-bold">Log in to EasyTask</h1>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 px-4">
+      <div className="w-full max-w-sm space-y-6 rounded-xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm">
+        <div className="space-y-1 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Welcome back</h1>
+          <p className="text-sm text-slate-400">Log in to your EasyTask account</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300">
               Email
             </label>
             <input
@@ -48,12 +51,13 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300">
               Password
             </label>
             <input
@@ -62,12 +66,13 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="••••••••"
             />
           </div>
 
           {mutation.isError && (
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-red-400">
               {(mutation.error as { error?: string })?.error ?? "Login failed"}
             </p>
           )}
@@ -75,15 +80,15 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full rounded bg-blue-600 py-2 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
           >
             {mutation.isPending ? "Logging in..." : "Log in"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-slate-400">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-blue-600 hover:underline">
+          <Link to="/signup" className="text-indigo-400 hover:text-indigo-300 transition-colors">
             Sign up
           </Link>
         </p>
